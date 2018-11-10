@@ -2,9 +2,10 @@ library(tidyverse)
 library(magrittr)
 library(stringr)
 
-opioids<- read_csv('./opioids.csv')
-overdoses<- read_csv('./overdoses.csv')
-prescribers<- read_csv('./prescriber-info.csv')
+opioids<- read_csv('data/opioids.csv')
+overdoses<- read_csv('data/overdoses.csv')
+prescribers<- read_csv('data/prescriber-info.csv')
+overdoses_1999_2014 <- read.csv('data/opioid_overdoses_1999_2014.csv')
 not_states <- list('AA','GU','ZZ','AE')
 #remove non-state entries
 
@@ -81,10 +82,25 @@ op_by_state <- opioid_prescribers %>% group_by(State) %>% summarize(sum(Total_Op
 ggplot(data = op_by_state, 
        aes(reorder(Abbrev, Prescriptions_Per_100000), Prescriptions_Per_100000)) + geom_col()
 
+overdoses_1999_2014 <- overdoses_1999_2014 %>%
+  mutate(Deaths = as.character(Deaths), Year = as.character(Year), Population = as.character(Population), as.character(Crude.Rate), as.character(Prescriptions.Dispensed.by.US.Retailers.in.that.year..millions.)) %>%
+  mutate(Deaths = as.numeric(Deaths), Year = as.numeric(Year), Population = as.numeric(Population), as.numeric(Crude.Rate), as.numeric(Prescriptions.Dispensed.by.US.Retailers.in.that.year..millions.)) 
 
 
 
+tn_overdoses <- overdoses_1999_2014 %>% 
+  filter(State == "Tennessee") 
+  
+
+ggplot (data = tn_overdoses, aes(x=Year, y= Deaths)) + geom_col() +ggtitle('Opioid Overdose Deaths TN: 1999 - 2014')
 
 
+overdoses_2014 <- overdoses_1999_2014 %>% 
+  filter(Year == 2014) %>%
+  arrange(desc(Deaths)) %>%
+  slice(1:10)
+
+
+ggplot(data=overdoses_2014, aes(x= State, y= Deaths)) +geom_col()
 
 
