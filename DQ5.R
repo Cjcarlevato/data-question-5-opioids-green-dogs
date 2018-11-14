@@ -97,10 +97,87 @@ ggplot (data = tn_overdoses, aes(x=Year, y= Deaths)) + geom_col() +ggtitle('Opio
 
 overdoses_2014 <- overdoses_1999_2014 %>% 
   filter(Year == 2014) %>%
-  arrange(desc(Deaths)) %>%
-  slice(1:10)
+  arrange(desc(Deaths)) 
+  
+
+overdoses_2014 <- overdoses_2014 %>%
+  mutate(Deaths_Per_100000 = Deaths /Population *100000) 
+  
+
+overdoses_2014 %>%
+  top_n(10, Deaths_Per_100000) %>%
+  ggplot(aes(x= reorder(State, Deaths_Per_100000), y= Deaths_Per_100000)) + geom_col() +
+  xlab('State') +
+  ylab('Deaths Per 100,000') +
+  ggtitle('Top 10 states by Overdoses in 2014') 
 
 
-ggplot(data=overdoses_2014, aes(x= State, y= Deaths)) +geom_col()
+overdoses_99_14 <- overdoses_1999_2014 %>% 
+  filter(Year == 2014 | Year == 1999) 
+
+
+overdoses_99_14 <- overdoses_99_14 %>%
+  mutate(Deaths_Per_100000 = Deaths /Population *100000) %>%
+  select(State, Year, Deaths_Per_100000) %>%
+  spread(Year, Deaths_Per_100000)
+
+
+overdoses_99_14 <- overdoses_99_14 %>%
+  mutate(Pct_Change = (`2014`- `1999`)/ `1999` *100) 
+  
+  overdoses_99_14 %>%
+  top_n(10, Pct_Change) %>%
+  ggplot(aes(x= reorder(State, Pct_Change), y= Pct_Change)) + geom_col() +
+  xlab('State') +
+  ylab('Percent Change from 1999 to 2014') +
+  ggtitle('Top 10 states by Percent Change from 1999 to 2014') 
+
+
+  opioid_perscribers_2016 <- read.csv('data/opioid_prescribers_2016.csv')
+  opioid_perscribers_2015 <- read.csv('data/opioid_prescribers_2015.csv')
+
+  
+install.packages("ggmap")
+intall.packages("rgeos")
+install.packages("maptools")
+library(ggmap)
+library(rgeos)
+library(maptools)
+
+zips <- read_csv('data/zips.csv') %>% 
+  select(Zip = zip, County = COUNTYNAME, FP = county) %>% 
+  mutate(FP = as.numeric(FP))  
+
+popest <- read_csv('data/popest.csv') %>% 
+  select(FP = GEO.id2, County = 'GEO.display-label', Pop = respop72016)
+
+
+opioid_perscribers_2016 <- inner_join(opioid_perscribers_2016, zips, by = "Zip")
+
+
+sh <- readShapePoly('data/cb_2017_us_county_500k/cb_2017_us_county_500k.shp')
+WV_sh <- sh[sh$STATEFP == 54,]
+plot(WV_sh)
+
+
+WV_Counties <- opioid_perscribers_2016 %>% group_by(State, FP) %>% summarize(Total_Claims = sum(Total_Claim_Count)) %>% filter(State == 'WV', FP %/% 1000 == 54)
+
+WV_Counties <- inner_join(WV_Counties, popest) 
+WV_Counties <- WV_Counties %>% 
+  mutate(Claims_Per_100000 = 100000 * Total_Claims / Pop)
+
+WV_sh@data <- merge(WV_sh@data, WV_Counties, by.x = 'GEOID', by.y= 'FP')
+
+p <- colorRampPalette(c("white", "red"))(128)
+palette(p)
+
+claims <- WV_sh@data$Claims_Per_100000
+
+cols <- (claims - min(claims))/diff(range(claims))*127+1 #scale to the palette
+plot(WV_sh, col=cols) + title('Claims per 100,000') 
+
+WV_Counties %>% 
+  arrange(desc(Claims_Per_100000))
+
 
 
