@@ -41,33 +41,29 @@ opioids <- opioids %>%
   select('Drug Name', 'Generic Name') %>% 
   dplyr::rename(Drug_Name = "Drug Name", Generic_Name = "Generic Name")
 
-overdoses <- overdoses %>% mutate(Deaths_Per_100000 = Deaths/Population * 100000) %>% 
+overdoses <- overdoses %>%
+  rename(State_full = 'State', State ='Abbrev') %>% 
+  mutate(Deaths_Per_100000 = Deaths/Population * 100000) %>% 
   arrange(Deaths_Per_100000)
 
-ggplot(overdoses, aes(x = reorder(Abbrev, Deaths_Per_100000), y = Deaths_Per_100000)) + geom_col() +
+ggplot(overdoses, aes(x = reorder(State, Deaths_Per_100000), y = Deaths_Per_100000)) + geom_col() +
   xlab('State') + 
   ylab('Number of Deaths per 100,000 Residents') +
   ggtitle('        Prescription Drug Overdoses') +
   theme_bw()
 
-
-
 # converting prescribers to long format
 
 
-#Didnot work
-# keys <- c('Drug')
-# tdata <-  data.table(opioids, key = keys)
-# tbounce <- data.table(prescribers.long, key = keys)
-# tbounce[tdata, Bounced :=1L]
 prescribers.long <- gather(prescribers,'Drug', 'Value', ABILIFY:ZOLPIDEM.TARTRATE)
 head(prescribers.long)
 prescribers.long <- prescribers.long %>%
-dplyr::rename(Drug_Name = 'Drug')
+dplyr::rename(Drug_Name = Drug)
 head(prescribers.long)
 
+# Total Drug prescriptions with a value of 1 in opioid.prescriber columns
 total_drugs <-  
-  prescribers.long %>%
+  prescribers %>%
   select(State, Opioid.Prescriber) %>%
   filter(Opioid.Prescriber == 1) %>% 
   group_by(State, Opioid.Prescriber) %>% 
@@ -75,11 +71,12 @@ total_drugs <-
   arrange(desc(sum))
 total_drugs
 
-ggplot(total_drugs, aes(x = reorder(State, sum), y = sum)) + geom_col() +
+a <- ggplot(total_drugs, aes(x = reorder(State, sum), y = sum)) + geom_col() +
   xlab('State') + 
   ylab('Drugs Prescriptions per State') +
   ggtitle('            Total Number of Drugs Prescriptions per State')
-
+a <- ggplotly(a)
+a
 # prescribersjoin <- prescribers.long %>% 
 #   left_join(opioids, by= 'Drug') %>% 
 #   filter(Drug) %>% 
@@ -99,15 +96,40 @@ opioids$Generic_Name <-  gsub(" ", ".",opioids$Generic_Name)
 
 list.opioids <- dput(as.character(opioids$Drug_Name))
 list.opioids2 <- dput(as.character(opioids$Generic_Name))
-opioids_in_prescribers <- prescribers %>% select(NPI,Gender,State,Credentials,Specialty, Opioid.Prescriber,one_of(list.opioids),one_of(list.opioids2))
-colnames(opioids_in_prescribers)
-
-opioids_in_prescribers.long <- gather(opioids_in_prescribers,'Drug', 'Value', ACETAMINOPHEN.CODEINE:TRAMADOL.HCL)
-head(opioids_in_prescribers.long)
+opioids_11_prescribers <- prescribers %>% select(NPI,Gender,State,Credentials,Specialty, Opioid.Prescriber,one_of(list.opioids),one_of(list.opioids2))
+opioids_11_prescribers
 
 
+# only opipoid(11)
+
+opioids_11_prescribers.long <- gather(opioids_11_prescribers,'Drug', 'Value', ACETAMINOPHEN.CODEINE:TRAMADOL.HCL)
+head(opioids_11_prescribers.long)
+opioids_only_drugs <-  
+  opioids_11_prescribers.long %>%
+  group_by(Drug) %>% 
+  summarise(sum = sum(Value, na.rm = TRUE)) %>% 
+  arrange(desc(sum))
+opioids_only_drugs
+
+ggplot(opioids_only_drugs, aes(x = reorder(Drug, sum), y = sum)) + geom_col() + coord_flip()+
+  xlab('Opioid Name') + 
+  ylab('opioid Prescriptions') +
+  ggtitle('                  Total number of Prescriotions')
 
 
+# code from Michael
+opioid_prescribers_2016 %>% filter(State == 'TX') %>% group_by(Generic_Name) %>% 
+  summarize(Total = sum(Total_Claim_Count)) %>% 
+  top_n(10, Total) %>%
+  ggplot(aes(x = reorder(Generic_Name, Total), y = Total)) + geom_col() + coord_flip() +
+  ggtitle('Most Commonly Prescribed Opioids, Texas') 
 
 
+#Mering population data with opioids_in_prescriber
+
+overdoses_prescribers<- merge(overdoses, prescribers, by= 'State')
+head(overdoses_prescribers)
+
+overdoses_11_opioids <- merge(overdoses, opioids_11_prescribers, by= 'State')
+head(overdoses_11_opioids)
 
