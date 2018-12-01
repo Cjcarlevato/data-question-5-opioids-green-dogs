@@ -20,6 +20,8 @@ unemployment <- read_csv('data/unemployment.csv') %>%
 Rural <- read_csv('data/State/Rural/Rural.csv') %>% 
   select(State, Pct_Rural)
 
+Election <- read_csv('data/State/Election.csv')
+
 Income <- read_csv('data/State/Incomes.csv')
 
 od_2016 <- read_csv('data/KFF/raw_data_2016.csv') %>% 
@@ -52,9 +54,11 @@ drugs_by_class_2016 <- drugs_by_class_2016 %>%
   inner_join(pct_white)
 
 state_2016 <- read_csv('data/Prescribing_Rate/State_2016.csv')
+vet <- read_csv('data/State/Vet/Vet_Pct_2016.csv')
+lfr <- read_csv('data/State/Labor_Force/LFP_2016.csv')
 
 drugs_by_class_2016 <- drugs_by_class_2016 %>% inner_join(state_2016) %>% 
-  inner_join(Rural)
+  inner_join(Rural) %>% inner_join(vet) %>% inner_join(lfr) %>%  inner_join(Election)
 
 
 
@@ -88,9 +92,11 @@ drugs_by_class_2015 <- drugs_by_class_2015 %>%
   inner_join(pct_white)
 
 state_2015 <- read_csv('data/Prescribing_Rate/State_2015.csv')
+vet <- read_csv('data/State/Vet/Vet_Pct_2015.csv')
+lfr <- read_csv('data/State/Labor_Force/LFP_2015.csv')
 
 drugs_by_class_2015 <- drugs_by_class_2015 %>% inner_join(state_2015) %>% 
-  inner_join(Rural)
+  inner_join(Rural) %>% inner_join(vet) %>% inner_join(lfr) %>% inner_join(Election)
 
 
 
@@ -124,9 +130,11 @@ drugs_by_class_2014 <- drugs_by_class_2014 %>%
   inner_join(pct_white)
 
 state_2014 <- read_csv('data/Prescribing_Rate/State_2014.csv')
+vet <- read_csv('data/State/Vet/Vet_Pct_2014.csv')
+lfr <- read_csv('data/State/Labor_Force/LFP_2014.csv')
 
 drugs_by_class_2014 <- drugs_by_class_2014 %>% inner_join(state_2014) %>% 
-  inner_join(Rural)
+  inner_join(Rural) %>% inner_join(vet) %>% inner_join(lfr)%>% inner_join(Election)
 
 
 od_2013 <- read_csv('data/KFF/raw_data_2013.csv') %>% 
@@ -159,15 +167,19 @@ drugs_by_class_2013 <- drugs_by_class_2013 %>%
   inner_join(pct_white)
 
 state_2013 <- read_csv('data/Prescribing_Rate/State_2013.csv')
+vet <- read_csv('data/State/Vet/Vet_Pct_2013.csv')
+lfr <- read_csv('data/State/Labor_Force/LFP_2013.csv')
 
 drugs_by_class_2013 <- drugs_by_class_2013 %>% inner_join(state_2013) %>% 
-  inner_join(Rural)
+  inner_join(Rural) %>% inner_join(vet) %>% inner_join(lfr)%>% inner_join(Election)
 
 
 drugs_by_class <- rbind(drugs_by_class_2016, drugs_by_class_2015, drugs_by_class_2014, drugs_by_class_2013)
 drugs_by_class <- drugs_by_class %>% mutate(Opioid_Death_Rate = as.numeric(Opioid_Death_Rate))
 
 drugs_by_class <- drugs_by_class %>% drop_na
+
+correlations <- cor(drugs_by_class %>% select(-c(State, Abbrev)))
 
 library(rsample)
 library(randomForest)
@@ -177,7 +189,10 @@ opioid_splits <- initial_split(drugs_by_class %>% select(-c(Abbrev, State, Year)
 train <- training(opioid_splits)
 test <- testing(opioid_splits)
 
-rfMod <- randomForest(Opioid_Death_Rate~., data=train, ntree = 200)
+lm <- lm(Opioid_Death_Rate~., data = train)
+summary(lm)
+
+rfMod <- randomForest(Opioid_Death_Rate~., data=train, mtry = 10)
 print(rfMod)
 
 plot(rfMod)
@@ -188,6 +203,9 @@ test$predictions <- predict(rfMod, test)
 
 r2 <- rSquared(test$Opioid_Death_Rate, test$Opioid_Death_Rate - test$predictions)
 print(r2)
+
+mae <- mean(abs(test$Opioid_Death_Rate - test$predictions))
+print(mae)
 
 mse <- mean((test$Opioid_Death_Rate - test$predictions)^2)
 print(mse)
