@@ -179,5 +179,15 @@ plot(WV_sh, col=cols) + title('Claims per 100,000')
 WV_Counties %>% 
   arrange(desc(Claims_Per_100000))
 
+install.packages("rsample")
+install.packages("randomForest")
+install.packages("miscTools")
+
+library(rsample)
+library(randomForest)
+library(miscTools)
+
+
+
 
 
