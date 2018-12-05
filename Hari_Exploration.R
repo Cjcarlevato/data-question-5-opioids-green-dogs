@@ -38,6 +38,9 @@ opioid_prescribers_2013 <- read_csv('./opioid_prescribers_2013.csv')
 opioid_prescribers_2014 <- read_csv('./opioid_prescribers_2014.csv')
 opioid_prescribers_2015 <- read_csv('./opioid_prescribers_2015.csv')
 opioid_prescribers_2016 <- read_csv('./opioid_prescribers_2016.csv')
+total_prescriptions <- read_csv('./prescribing_rate_full.csv')
+overdose_2006_2016 <- read_csv('./overdose_full.csv')
+
 
 overdoses_prescribers<- merge(overdoses, prescribers, by= 'State')
 overdoses_prescribers.long <- gather(overdoses_prescribers,'Drug_Name', 'Value', ABILIFY:ZOLPIDEM.TARTRATE)
@@ -320,7 +323,7 @@ opioids_2013_plot <- ggplot(data = opioids_2013,
   xlab('Opioid') +
   ylab('Prescriptions per 100000') +
   ggtitle('Top Opioid prescriptions in 2013') +
-  scale_y_continuous(labels = comma)+
+  scale_y_continuous(labels = comma,limits = c(0,550000))+
   theme_bw()
 opioids_2013_plot
 
@@ -331,7 +334,7 @@ opioids_2014_plot <- ggplot(data = opioids_2014,
   xlab('Opioid') +
   ylab('Prescriptions per 100000') +
   ggtitle('Top Opioid prescriptions in 2014') +
-  scale_y_continuous(labels = comma)+
+  scale_y_continuous(labels = comma,limits = c(0,550000))+
   theme_bw()
 opioids_2014_plot
 
@@ -344,7 +347,8 @@ opioids_2015_plot <- ggplot(data = opioids_2015,
   xlab('Opioid') +
   ylab('Prescriptions per 100000') +
   ggtitle('Top Opioid prescriptions in 2015') +
-  scale_y_continuous(labels = comma)+
+  
+  scale_y_continuous(labels = comma,limits = c(0,550000))+
   theme_bw()
 opioids_2015_plot
 
@@ -358,12 +362,107 @@ opioids_2016_plot <- ggplot(data = opioids_2016,
   xlab('Opioid') +
   ylab('Prescriptions per 100000') +
   ggtitle('Top Opioid prescriptions in 2016') +
-  scale_y_continuous(labels = comma)+
+  scale_y_continuous(labels = comma,limits = c(0,550000))+
   theme_bw()
 opioids_2016_plot
 
 ggarrange(opioids_2013_plot, opioids_2014_plot, opioids_2015_plot, opioids_2016_plot, ncol = 2, nrow = 2)
 
+
+
+
+
+# TREND IN OPIOIDS BY STATE 
+
+NP_2013_state <- overdoses_2013 %>% 
+  group_by(State_full,Population) %>%  summarize(Total_prescriptions = sum(Total_Claim_Count)) %>%  arrange(desc(Total_prescriptions)) %>% 
+  mutate(Prescriptions_per_100000 = Total_prescriptions/Population*100000) %>% ungroup()
+NP_2013_state
+
+NP_2014_state <- overdoses_2014 %>% 
+  group_by(State_full,Population) %>%  summarize(Total_prescriptions = sum(Total_Claim_Count)) %>%  arrange(desc(Total_prescriptions)) %>% 
+  mutate(Prescriptions_per_100000 = Total_prescriptions/Population*100000)%>% ungroup()
+
+NP_2015_state <- overdoses_2015 %>%
+  group_by(State_full,Population) %>%  summarize(Total_prescriptions = sum(Total_Claim_Count)) %>%  arrange(desc(Total_prescriptions)) %>% 
+  mutate(Prescriptions_per_100000 = Total_prescriptions/Population*100000)%>% ungroup()
+
+NP_2016_state <- overdoses_2016 %>%  
+  group_by(State_full,Population) %>%  summarize(Total_prescriptions = sum(Total_Claim_Count)) %>%  arrange(desc(Total_prescriptions)) %>% 
+  mutate(Prescriptions_per_100000 = Total_prescriptions/Population*100000)%>% ungroup()
+
+
+#Exploration
+Year_2013 <-  NP_2013_state %>% select(State_full,Prescriptions_per_100000) %>% rename('s_2013' = 'Prescriptions_per_100000')%>% ungroup()
+Year_2014 <-  NP_2014_state %>%  select(State_full,Prescriptions_per_100000) %>% rename('s_2014' = 'Prescriptions_per_100000')%>% ungroup()
+Year_2015 <-  NP_2015_state %>% select(State_full,Prescriptions_per_100000) %>% rename('s_2015' = 'Prescriptions_per_100000')%>% ungroup()
+Year_2016 <-  NP_2016_state %>% select(State_full,Prescriptions_per_100000) %>% rename('s_2016' = 'Prescriptions_per_100000')%>% ungroup()
+
+
+merged <-  merge(Year_2013, Year_2014,by='State_full')
+merged
+merged2 <- merge(merged, Year_2015, by = 'State_full')
+merged2
+merged3 <- merge(merged2, Year_2016, by = 'State_full')
+NP_2013_2016 <- merged3 %>% select(State_full,s_2013,s_2014,s_2015,s_2016)
+NP_2013_2016
+#merged3 <- merged3 %>% arrange(desc(sum_2013, sum_2014,sum_2015,sum_2016))
+NP_2013_2016  <-  NP_2013_2016 %>%  group_by(State_full) %>% arrange(desc(s_2013)) %>% rename('2013'='s_2013','2014'='s_2014','2015'='s_2015','2016'='s_2016')
+NP_2013_2016.long <-  gather(NP_2013_2016,'Year', 'Prescriptions_per_100000', '2013':'2016') %>% arrange(desc(Prescriptions_per_100000))
+State_names <- NP_2013_2016$State_full
+State_names[1:5]
+Top_NP_states <- NP_2013_2016.long %>% filter(State_full %in% State_names[1:5])
+Top_NP_states
+ggplot(Top_NP_states, aes(Year, Prescriptions_per_100000, group = State_full, color = State_full)) + 
+  geom_line(size = 1) +
+  scale_y_continuous(labels = comma)+
+  geom_point(size=3, shape=21, aes(fill=factor(State_full)))+
+  labs(color = "US State", fill = 'US State')+
+  ylab('Prescriptions per 100000') +
+  xlab('Year') +
+  ggtitle('     Total Opioid prescriptions per 100000 in US') +
+  theme_bw()
+
+
+# Total prescribing rate and death rate from 2006 to 2016
+total_prescriptions <- total_prescriptions %>% group_by(State) %>% arrange(desc(Prescribing_Rate)) 
+total_prescriptions_wide <-total_prescriptions %>% spread(Year,Prescribing_Rate) %>% arrange(desc(`2006`))
+total_prescriptions_wide
+State_names <- total_prescriptions_wide$State
+State_names[1:5]
+Top_states <- total_prescriptions %>% filter(State %in% State_names[1:5])
+Top_states
+a <- ggplot(Top_states, aes(Year, Prescribing_Rate, group = State, color = State)) + 
+  geom_line(size = 1) +
+  scale_y_continuous(labels = comma)+
+  geom_point(size=3, shape=21, aes(fill=factor(State)))+
+  labs(color = "US State", fill = 'US State')+
+  ylab('Prescribing rate') +
+  xlab('Year') +
+  ggtitle('     Opioids prescribing rate in US') +
+  theme_bw()
+a
+
+
+overdose_2006_2016 <- overdose_2006_2016 %>% group_by(State) %>% mutate(Opioid_Death_Rate = as.numeric(Opioid_Death_Rate, na.rm=TRUE)) %>% arrange(desc(Opioid_Death_Rate))
+overdose_2006_2016_wide <-overdose_2006_2016 %>% spread(Year,Opioid_Death_Rate)
+State_names2 <- total_prescriptions_wide$State
+State_names2[1:5]
+overdose_2006_2016_x <- overdose_2006_2016 %>% filter(State %in% State_names2[1:5])
+overdose_2006_2016_x
+b <- ggplot(overdose_2006_2016, aes(Year, Opioid_Death_Rate, group = State, color = State)) + 
+  geom_line(size = 1) +
+  scale_y_continuous(labels = comma)+
+  geom_point(size=3, shape=21, aes(fill=factor(State)))+
+  labs(color = "US State", fill = 'US State')+
+  ylab('Opioid Death Rate') +
+  xlab('Year') +
+  ggtitle('    Opioid Death Rate in US') +
+  theme_bw()
+b
+
+
+ggarrange(a,b,ncol = 2, nrow = 1)
 
 # # Pareto Exploration
 # # using qcc library 
@@ -530,19 +629,19 @@ p3
   
   #labs(title = "Pareto Plot", subtitle = "XXXX", x = 'Prescriber', y ='Prescriptions_per_100000')
 
-pareto_prescriptions2 <-  
-  overdoses_2016 %>%
-  filter(State =='TN') %>% 
-  group_by(Specialty, Population) %>% 
-  summarise(Total_prescriptions = sum(Total_Claim_Count, na.rm = TRUE)) %>% 
-  mutate(Prescriptions_per_100000 = Total_prescriptions/Population*100000) %>% 
-  arrange(desc(Total_prescriptions))
-
-pareto_prescriptions2
-
-pareto_prescriptions2 <- pareto_prescriptions2 %>% select(Specialty,Prescriptions_per_100000) %>%  arrange(Prescriptions_per_100000)
-pareto_prescriptions2
-
-Pareto_number_data = pareto_prescriptions2$Prescriptions_per_100000
-names(Pareto_number_data)= pareto_prescriptions2$Specialty
-pareto.chart(Pareto_number_data, cumperc = seq(0,100,by =5),col=rainbow(length(pareto_prescriptions2))) 
+# pareto_prescriptions2 <-  
+#   overdoses_2016 %>%
+#   filter(State =='TN') %>% 
+#   group_by(Specialty, Population) %>% 
+#   summarise(Total_prescriptions = sum(Total_Claim_Count, na.rm = TRUE)) %>% 
+#   mutate(Prescriptions_per_100000 = Total_prescriptions/Population*100000) %>% 
+#   arrange(desc(Total_prescriptions))
+# 
+# pareto_prescriptions2
+# 
+# pareto_prescriptions2 <- pareto_prescriptions2 %>% select(Specialty,Prescriptions_per_100000) %>%  arrange(Prescriptions_per_100000)
+# pareto_prescriptions2
+# 
+# Pareto_number_data = pareto_prescriptions2$Prescriptions_per_100000
+# names(Pareto_number_data)= pareto_prescriptions2$Specialty
+# pareto.chart(Pareto_number_data, cumperc = seq(0,100,by =5),col=rainbow(length(pareto_prescriptions2))) 
