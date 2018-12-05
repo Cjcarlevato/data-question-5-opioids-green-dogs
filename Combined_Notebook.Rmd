@@ -25,34 +25,84 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars, echo=FALSE, warning=FALSE}
-overdoses <- read_csv('data/State/overdose_full.csv')
+```{r, echo=FALSE, include = FALSE}
 state_abbrev <- read_csv('data/overdoses.csv') %>% select(State, Abbrev)
-overdoses_deaths <- overdoses %>% filter(Year == 2016) %>% select(-Year) %>% inner_join(state_abbrev)
+overdoses <- read_csv('data/State/overdose_full.csv') %>% inner_join(state_abbrev)
 #overdoses_deaths$hover <- with(overdoses_deaths)
 l <- list(color = toRGB("white"), width = 2)
 g <- list(
   scope = 'usa',
   projection = list(type = 'albers usa'),
-  showlakes = TRUE,
+  showlakes = FALSE,
   lakecolor = toRGB('white')
 )
-p <- plot_geo(overdoses_deaths, locationmode = 'USA-states') %>%
+p_2016 <- plot_geo(overdoses %>% filter(Year == 2016), locationmode = 'USA-states') %>%
   add_trace(
     z = ~Opioid_Death_Rate, locations = ~Abbrev,
     colors = 'Reds'
   ) %>%
-  colorbar(title = "    Deaths \nPer 100000") %>%
+  colorbar(title = "    Deaths \nPer 100,000 Residents") %>%
   layout(
-    title = 'Opioid Deaths per 100,000 Residents',
+    title = 'Opioid Deaths per 100,000 Residents, 2016',
     geo = g)
 
-p
+p_2006 <- plot_geo(overdoses %>% filter(Year == 2006), locationmode = 'USA-states') %>%
+  add_trace(
+    z = ~Opioid_Death_Rate, locations = ~Abbrev, zmin = 0, zmax = 43,
+    colors = 'Reds'
+  ) %>%
+  colorbar(title = "    Deaths \nPer 100,000 Residents") %>%
+  layout(
+    title = 'Opioid Deaths per 100,000 Residents, 2006',
+    geo = g)
+
+p_1999 <- plot_geo(overdoses %>% filter(Year == 1999), locationmode = 'USA-states') %>%
+  add_trace(
+    z = ~Opioid_Death_Rate, locations = ~Abbrev, zmin = 0, zmax = 43,
+    colors = 'Reds'
+  ) %>%
+  colorbar(title = "    Deaths \nPer 100,000 Residents") %>%
+  layout(
+    title = 'Opioid Deaths per 100,000 Residents, 1999',
+    geo = g)
 ```
 
-```{r}
+```{r, echo = FALSE}
+p_1999
+p_2006
+p_2016
+```
+
+
+
+
+
+```{r, include = FALSE}
+overdoses_99_16 <- overdoses %>% 
+  filter(Year == 2016 | Year == 1999)  
+
+overdoses_99_16 <- overdoses_99_16 %>% 
+  spread(Year, Opioid_Death_Rate) %>% 
+  mutate(Pct_Change = (`2016`- `1999`)/ `1999` *100) 
+```
+
+```{r, echo = FALSE}
+overdoses_99_16 %>%
+  top_n(10, Pct_Change) %>%
+  ggplot(aes(x= reorder(State, Pct_Change), y= Pct_Change)) + 
+  geom_col(aes(fill = Pct_Change),show.legend = FALSE) +
+  xlab('State') +
+  ylab('Percent Change from 1999 to 2016') +
+  ggtitle('Top 10 states by Percent Change in Opioid Deaths from 1999 to 2016') 
+```
+
+
+
+
+
+
+```{r, echo = FALSE, include = FALSE}
 total_prescriptions <- read_csv('data/State/prescribing_rate_full.csv')
-overdose_2006_2016 <- read_csv('data/State/overdose_full.csv')
 
 # Total prescribing rate and death rate from 2006 to 2016
 total_prescriptions <- total_prescriptions %>% group_by(State) %>% arrange(desc(Prescribing_Rate)) 
@@ -67,13 +117,13 @@ a <- ggplot(Top_states, aes(Year, Prescribing_Rate, group = State, color = State
   scale_y_continuous(labels = comma)+
   geom_point(size=3, shape=21, aes(fill=factor(State)))+
   labs(color = "US State", fill = 'US State')+
-  ylab('Prescribing rate') +
+  ylab('Prescriptions per 100 Persons') +
   xlab('Year') +
-  ggtitle('     Opioids prescribing rate in US') +
-  theme_bw()
+  ggtitle('     Opioid prescribing rate in US') +
+  theme_bw() + theme(legend.position="left") + labs(title = " Opioid Prescribing Rate",
+       caption = "Source: Centers for Disease Control and Prevention") 
 
-
-overdose_2006_2016 <- overdose_2006_2016 %>% group_by(State) %>% mutate(Opioid_Death_Rate = as.numeric(Opioid_Death_Rate, na.rm=TRUE)) %>% arrange(desc(Opioid_Death_Rate))
+overdose_2006_2016 <- overdoses %>% filter(Year != 1999) %>% group_by(State) %>% mutate(Opioid_Death_Rate = as.numeric(Opioid_Death_Rate, na.rm=TRUE)) %>% arrange(desc(Opioid_Death_Rate))
 overdose_2006_2016_wide <-overdose_2006_2016 %>% spread(Year,Opioid_Death_Rate)
 State_names2 <- total_prescriptions_wide$State
 State_names2[1:5]
@@ -84,23 +134,155 @@ b <- ggplot(overdose_2006_2016_x, aes(Year, Opioid_Death_Rate, group = State, co
   scale_y_continuous(labels = comma)+
   geom_point(size=3, shape=21, aes(fill=factor(State)))+
   labs(color = "US State", fill = 'US State')+
-  ylab('Opioid Death Rate') +
+  ylab('Overdose Deaths per 100,000 Residents') +
   xlab('Year') +
-  ggtitle('    Opioid Death Rate in US') +
+  ggtitle('    ') +
+  theme_bw() + theme(legend.position="none") + labs(title = "Opioid Overdose Death Rate (Age Adjusted)",
+       caption = "Source: Henry J Kaiser Family Foundation") 
+```
+
+```{r, echo = FALSE}
+ggarrange(a,b,ncol = 2, nrow = 1, widths = c(1.25, 1))
+```
+
+```{r, include = FALSE}
+op_list = c('CODEINE', 'BUPRENORPHINE', 'BUTORPHANOL',
+            'FENTANYL', 'HYDROCODONE', 'HYDROMORPHONE', 'OXYCODONE', 'LEVORPHANOL',
+            'MEPERIDINE', 'METHADONE', 'MORPHINE', 'NALBUPHINE', 'OPIUM', 'PENTAZOCINE',
+            'TAPENTADOL', 'TRAMADOL')
+
+opioid_prescribers_2016 <- read_csv('data/opioid_prescribers_2016.csv')
+by_drug_2016 <- opioid_prescribers_2016 %>% 
+  group_by(Generic_Name) %>% 
+  summarize(Total_Claims = sum(Total_Claim_Count)) %>% 
+  spread(Generic_Name, Total_Claims)
+drugs_by_class_2016 <- op_list %>% 
+  map(~ by_drug_2016 %>% 
+        select(matches(.x)) %>%
+        reduce(`+`)) %>%
+  set_names(op_list) %>%
+  data.frame() %>% 
+  gather(Drug, Claims)
+
+opioids_2016_plot <- ggplot(data = drugs_by_class_2016 %>% top_n(5, Claims), 
+                            aes(reorder(Drug, Claims), Claims)) +
+  geom_bar(stat = 'identity', aes(fill = Claims),show.legend = FALSE) + coord_flip()+
+  xlab('Drug') +
+  ylab('Total Claims') +
+  ggtitle('Top 5 Medicare Part D Claims, 2016') +
+  scale_y_continuous(labels = comma)+
   theme_bw()
 
-ggarrange(a,b,ncol = 2, nrow = 1)
+opioid_prescribers_2015 <- read_csv('data/opioid_prescribers_2015.csv')
+by_drug_2015 <- opioid_prescribers_2015 %>% 
+  group_by(Generic_Name) %>% 
+  summarize(Total_Claims = sum(Total_Claim_Count)) %>% 
+  spread(Generic_Name, Total_Claims)
+drugs_by_class_2015 <- op_list %>% 
+  map(~ by_drug_2015 %>% 
+        select(matches(.x)) %>%
+        reduce(`+`)) %>%
+  set_names(op_list) %>%
+  data.frame() %>% 
+  gather(Drug, Claims)
 
+opioids_2015_plot <- ggplot(data = drugs_by_class_2015 %>% top_n(5, Claims), 
+                            aes(reorder(Drug, Claims), Claims)) +
+  geom_bar(stat = 'identity', aes(fill = Claims),show.legend = FALSE) + coord_flip()+
+  xlab('Drug') +
+  ylab('Total Claims') +
+  ggtitle('Top 5 Medicare Part D Claims, 2015') +
+  scale_y_continuous(labels = comma)+
+  theme_bw()
+
+opioid_prescribers_2014 <- read_csv('data/opioid_prescribers_2014.csv')
+by_drug_2014 <- opioid_prescribers_2014 %>% 
+  group_by(Generic_Name) %>% 
+  summarize(Total_Claims = sum(Total_Claim_Count)) %>% 
+  spread(Generic_Name, Total_Claims)
+drugs_by_class_2014 <- op_list %>% 
+  map(~ by_drug_2014 %>% 
+        select(matches(.x)) %>%
+        reduce(`+`)) %>%
+  set_names(op_list) %>%
+  data.frame() %>% 
+  gather(Drug, Claims)
+
+opioids_2014_plot <- ggplot(data = drugs_by_class_2014 %>% top_n(5, Claims), 
+                            aes(reorder(Drug, Claims), Claims)) +
+  geom_bar(stat = 'identity', aes(fill = Claims),show.legend = FALSE) + coord_flip()+
+  xlab('Drug') +
+  ylab('Total Claims') +
+  ggtitle('Top 5 Medicare Part D Claims, 2014') +
+  scale_y_continuous(labels = comma)+
+  theme_bw()
+
+opioid_prescribers_2013 <- read_csv('data/opioid_prescribers_2013.csv')
+by_drug_2013 <- opioid_prescribers_2013 %>% 
+  group_by(Generic_Name) %>% 
+  summarize(Total_Claims = sum(Total_Claim_Count)) %>% 
+  spread(Generic_Name, Total_Claims)
+drugs_by_class_2013 <- op_list %>% 
+  map(~ by_drug_2013 %>% 
+        select(matches(.x)) %>%
+        reduce(`+`)) %>%
+  set_names(op_list) %>%
+  data.frame() %>% 
+  gather(Drug, Claims)
+
+opioids_2013_plot <- ggplot(data = drugs_by_class_2013 %>% top_n(5, Claims), 
+                            aes(reorder(Drug, Claims), Claims)) +
+  geom_bar(stat = 'identity', aes(fill = Claims),show.legend = FALSE) + coord_flip()+
+  xlab('Drug') +
+  ylab('Total Claims') +
+  ggtitle('Top 5 Medicare Part D Claims, 2013') +
+  scale_y_continuous(labels = comma)+
+  theme_bw()
 ```
 
 
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo = FALSE}
+# Do we need all 4 plots here?
+ggarrange(opioids_2013_plot, opioids_2014_plot,
+          opioids_2015_plot, opioids_2016_plot,
+          ncol = 2, nrow = 2)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, include = FALSE}
+population <- read_csv('data/State/Demographics/Population.csv')
+
+drugs_by_state_wide_2016 <- opioid_prescribers_2016 %>% group_by(State, Generic_Name) %>% 
+  summarize(Total_Prescriptions = sum(Total_Claim_Count)) %>% ungroup() %>% 
+  rename(Abbrev = State) %>% 
+  inner_join(state_abbrev) %>% inner_join(population %>% filter(Year == 2016)) %>%  
+  mutate(Prescription_Rate = Total_Prescriptions/ totpop * 100000) %>% 
+  select(-Total_Prescriptions) %>% 
+  spread(Generic_Name, Prescription_Rate) %>% 
+  inner_join(overdoses %>% filter(Year == 2016)) %>% 
+  mutate_all(funs(replace(.,is.na(.),0)))
+
+drugs_by_class_2016 <- op_list %>% 
+  map(~ drugs_by_state_wide_2016 %>% 
+        select(matches(.x)) %>%
+        reduce(`+`)) %>%
+  set_names(op_list) %>%       
+  bind_cols(drugs_by_state_wide_2016 %>% select(Year, Abbrev, State, Opioid_Death_Rate), .)
+
+correlations <- cor(drugs_by_class_2016 %>% select(-c(Year, State, Abbrev)))[1,] %>% 
+  data.frame() %>% 
+  rownames_to_column() %>% 
+  rename(Drug = rowname) %>%
+  rename(Correlation = '.') %>% 
+  filter(Drug != 'Opioid_Death_Rate')
+```
+
+```{r, echo = FALSE}
+ggplot(correlations, aes(x = reorder(Drug, Correlation), y = Correlation)) +
+  coord_flip()+
+  geom_col(aes(fill = Correlation),show.legend = FALSE) +
+  xlab('Drug') +
+  ylab('Correlation')+ 
+  labs(title = "Correlation Between Prescribing Rate and Opioid Death Rate by State",
+       caption = "Source: Medicare Part D Claims") 
+```
+
