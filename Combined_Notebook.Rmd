@@ -1,0 +1,106 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=11, fig.height = 6)
+
+library(tidyverse)
+library(plotly)
+library(tidyr)
+library(ggmap)
+library(dplyr)
+require(scales)
+library(ggpubr)
+library(directlabels)
+library(qcc)
+library(magrittr)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars, echo=FALSE, warning=FALSE}
+overdoses <- read_csv('data/State/overdose_full.csv')
+state_abbrev <- read_csv('data/overdoses.csv') %>% select(State, Abbrev)
+overdoses_deaths <- overdoses %>% filter(Year == 2016) %>% select(-Year) %>% inner_join(state_abbrev)
+#overdoses_deaths$hover <- with(overdoses_deaths)
+l <- list(color = toRGB("white"), width = 2)
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+p <- plot_geo(overdoses_deaths, locationmode = 'USA-states') %>%
+  add_trace(
+    z = ~Opioid_Death_Rate, locations = ~Abbrev,
+    colors = 'Reds'
+  ) %>%
+  colorbar(title = "    Deaths \nPer 100000") %>%
+  layout(
+    title = 'Opioid Deaths per 100,000 Residents',
+    geo = g)
+
+p
+```
+
+```{r}
+total_prescriptions <- read_csv('data/State/prescribing_rate_full.csv')
+overdose_2006_2016 <- read_csv('data/State/overdose_full.csv')
+
+# Total prescribing rate and death rate from 2006 to 2016
+total_prescriptions <- total_prescriptions %>% group_by(State) %>% arrange(desc(Prescribing_Rate)) 
+total_prescriptions_wide <-total_prescriptions %>% spread(Year,Prescribing_Rate) %>% arrange(desc(`2006`))
+total_prescriptions_wide
+State_names <- total_prescriptions_wide$State
+State_names[1:5]
+Top_states <- total_prescriptions %>% filter(State %in% State_names[1:5])
+Top_states
+a <- ggplot(Top_states, aes(Year, Prescribing_Rate, group = State, color = State)) + 
+  geom_line(size = 1) +
+  scale_y_continuous(labels = comma)+
+  geom_point(size=3, shape=21, aes(fill=factor(State)))+
+  labs(color = "US State", fill = 'US State')+
+  ylab('Prescribing rate') +
+  xlab('Year') +
+  ggtitle('     Opioids prescribing rate in US') +
+  theme_bw()
+
+
+overdose_2006_2016 <- overdose_2006_2016 %>% group_by(State) %>% mutate(Opioid_Death_Rate = as.numeric(Opioid_Death_Rate, na.rm=TRUE)) %>% arrange(desc(Opioid_Death_Rate))
+overdose_2006_2016_wide <-overdose_2006_2016 %>% spread(Year,Opioid_Death_Rate)
+State_names2 <- total_prescriptions_wide$State
+State_names2[1:5]
+overdose_2006_2016_x <- overdose_2006_2016 %>% filter(State %in% State_names2[1:5])
+overdose_2006_2016_x
+b <- ggplot(overdose_2006_2016_x, aes(Year, Opioid_Death_Rate, group = State, color = State)) + 
+  geom_line(size = 1) +
+  scale_y_continuous(labels = comma)+
+  geom_point(size=3, shape=21, aes(fill=factor(State)))+
+  labs(color = "US State", fill = 'US State')+
+  ylab('Opioid Death Rate') +
+  xlab('Year') +
+  ggtitle('    Opioid Death Rate in US') +
+  theme_bw()
+
+ggarrange(a,b,ncol = 2, nrow = 1)
+
+```
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
