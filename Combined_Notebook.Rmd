@@ -1,10 +1,27 @@
 ---
-title: "Untitled"
-output: html_document
+title: "Data Question 5- Opioids by Chris, Michael, and Harry"
+output: 
+  html_document:
+    css: style.css
 ---
+## Questions:
+<div id = "list12">
+1. Explore the dataset. Consider plotting the number of types of opioids by state and number of opioid prescribers by state. Understand the *most prevalent* types of opioids prescribed. Explore the states with the highest prevalence of fatal opioid overdoses. How does this compare to total overdoses? Is there a correlation between type of opioids prescribed and overdose deaths? What patterns emerge? Use different types of plots to visualize your data (histogram, bee swarm, box plot, etc...).  
+
+2. Test the assumption of the Pareto effect on opioid prescribing using the dataset (i.e., 20% of prescribers provide 80% of the opioids).  
+
+3. Build a model to predict the number of fatal opioid overdoses. Consider building the model for a specific state, but that's not necessary. Be creative-consider crossing the raw features that are available and creating new features (i.e., total type of opioids). Socioeconomics are often a driving factor for health outcomes. Can you find another dataset that provides information at the state level and can be used in your model? Can you perform tests to explain the variability in your outcome (i.e, effect estimation)?
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(eval= TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(fig.width=11, fig.height = 6)
 
 library(tidyverse)
@@ -42,7 +59,7 @@ p_2016 <- plot_geo(overdoses %>% filter(Year == 2016), locationmode = 'USA-state
   layout(
     title = 'Opioid Deaths per 100,000 Residents, 2016',
     titlefont = list(size = 24),
-        margin = list(t = 50, b = 50), 
+        margin = list(t = 50, b=50), 
     geo = g,
     annotations = 
  list(x = 1, y = -0.1, text = "Source: Henry J Kaiser Family Foundation", 
@@ -59,7 +76,7 @@ p_2006 <- plot_geo(overdoses %>% filter(Year == 2006), locationmode = 'USA-state
   layout(
     title = 'Opioid Deaths per 100,000 Residents, 2006',
     titlefont = list(size = 24),
-        margin = list(t = 50, b = 50),     
+        margin = list(t = 50, b=50),     
     geo = g,
     annotations = 
  list(x = 1, y = -0.1, text = "Source: Henry J Kaiser Family Foundation", 
@@ -76,7 +93,7 @@ p_1999 <- plot_geo(overdoses %>% filter(Year == 1999), locationmode = 'USA-state
   layout(
     title = 'Opioid Deaths per 100,000 Residents, 1999',
         titlefont = list(size = 24),
-        margin = list(t = 50, b= 50), 
+        margin = list(t = 50, b=50), 
     geo = g,
     annotations = 
  list(x = 1, y = -0.1, text = "Source: Henry J Kaiser Family Foundation", 
@@ -87,13 +104,53 @@ p_1999 <- plot_geo(overdoses %>% filter(Year == 1999), locationmode = 'USA-state
 
 ```{r, echo = FALSE}
 p_1999
-p_2006
+```
+
+<div id = 'list2'>
+# Opioid deaths in 1999:
+* Overall Picture Good  
+* New Mexico is the highest at 10 Deaths per 100,000
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+```{r, echo = FALSE}
+p_2006 
+```
+
+# Opioid deaths in 2006:
+<div id='list3'>
+* Overall picture slightly worse than 1999, but still rate of overdose still relatively low
+* West Virginia had already taken off, with the highest death rate at 16 deaths per 100,000
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+```{r, echo = FALSE}
 p_2016
 ```
 
-
-
-
+# Opioid deaths in 2016:
+<div id='list4'>
+* Overdoses have tripled in many states
+* West Virginia now at 43 deaths per 100,00
+* Most dramatic change in New England
+    + New Hampshire went from 8 to 36 deaths per 100,000 from '06 to '16 
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
 overdoses_99_16 <- overdoses %>% 
@@ -108,17 +165,25 @@ overdoses_99_16 <- overdoses_99_16 %>%
 overdoses_99_16 %>%
   top_n(10, Pct_Change) %>%
   ggplot(aes(x= reorder(State, Pct_Change), y= Pct_Change)) + 
-  geom_col(aes(fill = Pct_Change),show.legend = FALSE) +
+  geom_col(aes(fill = -Pct_Change),show.legend = FALSE) +
   xlab('')+
   ylab('Percent Change') +
-  ggtitle('Top 10 States by Percent Change in Opioid Deaths from 199 to 2016') +
+  ggtitle('Top 10 States by Percent Change in Opioid Deaths from 1999 to 2016') +
   theme(plot.title = element_text(size=22), axis.text.x=element_text(size=20, angle = 55, hjust = .95), axis.title = element_text(size = 20), axis.text.y=element_text(size = 20))+
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 ```
 
-
-
+# Percent change in opioid deaths over the last two decades have been alarming 
+<div id='list5'>
+* 10 states that with at least 1,000% increase in the rate of opioid deaths from '99 to '16
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, echo = FALSE, include = FALSE}
 total_prescriptions <- read_csv('data/State/prescribing_rate_full.csv')
@@ -165,6 +230,20 @@ b <- ggplot(overdose_2006_2016_x, aes(Year, Opioid_Death_Rate, group = State, co
 ggarrange(a,b,ncol = 2, nrow = 1, widths = c(1.25, 1))
 ```
 
+
+# How does the prescribing rate compare to the death rate?
+<div id='list6'>
+* Starting in 2012, prescriptions in high-prescribing states began to decline
+* This leads to a clear divergence b/c deaths continue to not only increase after 2012, but also increase at a faster rate
+* This divergence happens b/c of increase of illegal opioid intake
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
 ```{r, include = FALSE}
 heroin <- read_csv('data/State/By_Type/Heroin_2016.csv') %>% 
   rename(Heroin = `Crude Rate`) %>% select(State, Heroin)
@@ -204,6 +283,19 @@ ggplot(selected_states, aes(x = reorder(State, Order), y = Percent, fill = Cause
   labs(subtitle = "Note: Causes are not mutually exclusive, so percentages sum to greater than 100%")
 ```
 
+# Opioid death trends by type of opioid: 
+<div id = "list7">
+* Clear geographic trends
+* Mountain west state have disproportionate number of prescription opioids deaths
+* New England has disproportionate number of synthetic opioid deaths
+*New Jersey and Illinois have disproportionate number of heroin deaths
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
 library(tools)
@@ -228,7 +320,7 @@ drugs_by_class_2016 <- op_list %>%
 
 opioids_2016_plot <- ggplot(data = drugs_by_class_2016 %>% top_n(5, Claims), 
                             aes(reorder(Drug, Claims), Claims)) +
-  geom_bar(stat = 'identity', aes(fill = Claims),show.legend = FALSE) + coord_flip()+
+  geom_bar(stat = 'identity', aes(fill = -Claims),show.legend = FALSE) + coord_flip()+
   xlab('Drug') +
   ylab('Total Claims') +
   ggtitle('Top 5 Medicare Part D Claims, 2016') +
@@ -277,7 +369,7 @@ drugs_by_class_2013 <- op_list %>%
 
 opioids_2013_plot <- ggplot(data = drugs_by_class_2013 %>% top_n(5, Claims), 
                             aes(reorder(Drug, Claims), Claims)) +
-  geom_bar(stat = 'identity', aes(fill = Claims),show.legend = FALSE) + coord_flip()+
+  geom_bar(stat = 'identity', aes(fill = -Claims),show.legend = FALSE) + coord_flip()+
   xlab('Drug') +
   ylab('Total Claims') +
   ggtitle('Top 5 Medicare Part D Claims, 2013') +
@@ -291,6 +383,19 @@ opioids_2013_plot <- ggplot(data = drugs_by_class_2013 %>% top_n(5, Claims),
 ggarrange(opioids_2013_plot, opioids_2016_plot,
           ncol = 1, nrow = 2)
 ```
+
+# Trends in Medicare Part D Claims 
+<div id = 'list8'>
+* Overall drop in total number from 2013 to 2016
+* Hydrocodone both absolute and proportional decrease
+* Oxycodone both absolute and proportional increase
+<div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
 population <- read_csv('data/State/Demographics/Population.csv')
@@ -328,7 +433,7 @@ correlations <-  correlations %>% mutate(Drug = toTitleCase(tolower(Drug)))
 ```{r, echo = FALSE}
 ggplot(correlations, aes(x = reorder(Drug, Correlation), y = Correlation)) +
   coord_flip()+
-  geom_col(aes(fill = Correlation),show.legend = FALSE) +
+  geom_col(aes(fill = -Correlation),show.legend = FALSE) +
   xlab('Drug') +
   ylab('Correlation')+ 
   labs(title = "Correlation Between Prescribing Rate and Opioid Death Rate by State",
@@ -336,49 +441,40 @@ ggplot(correlations, aes(x = reorder(Drug, Correlation), y = Correlation)) +
   theme(plot.title = element_text(size=18), axis.text.x=element_text(size=16), axis.title = element_text(size = 16), axis.text.y=element_text(size = 16))
 
 ```
+<div id = 'list9'>
+* Buprenorphine has a strong correlation coefficient 
+* Why? Used to treat patients already addicted, thus more likely to overdose
+* Correlation is not causation!
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
-g <- list(
-  scope = 'usa',
-  projection = list(type = 'albers usa'),
-  showlakes = FALSE,
-  lakecolor = toRGB('white')
-)
-p1 <- plot_geo(drugs_by_state_wide_2016, locationmode = 'USA-states') %>%
-  add_trace(z = ~HYDROCODONE, locations = ~Abbrev,
-            color = ~HYDROCODONE, colors = 'Purples') %>%
-  colorbar(title = "HYDROCODONE", x = -.12, y = .75, xanchor = 'left', yanchor = 'middle') %>%
-  layout(geo =g, title = 'Hydrocodone Medicare Claims Per 100 Persons, 2016',        titlefont = list(size = 24),
-        margin = list(t = 50) )
-
-p2 <- plot_geo(drugs_by_state_wide_2016, locationmode = 'USA-states') %>%
-  add_trace(z = ~OXYCODONE, locations = ~Abbrev,
-            color = ~OXYCODONE, colors = 'Purples') %>%
-  colorbar(title = "OXYCODONE", x = -.12, y = .75, xanchor = 'left', yanchor = 'middle') %>%
-  layout(geo =g, title = 'Oxycodone Medicare Claims Per 100 Persons, 2016',         titlefont = list(size = 24),
-        margin = list(t = 50))
-```
-
-```{r}
 drugs_by_class <- drugs_by_state_wide_2016 %>% select(-c(Year, Abbrev)) %>% 
   gather(Drug, Claims, -c(State, Opioid_Death_Rate))
 
 dat <- drugs_by_class %>% filter(Drug %in% c('HYDROCODONE', 'OXYCODONE', 'TRAMADOL')) %>% 
   mutate(Drug = as.factor(Drug))
 
-dat %>%
+dat <- dat %>% mutate(size = 30/38*Opioid_Death_Rate + 160/38)
+
+p1 <- dat %>%
   plot_ly() %>% 
   add_trace(x = ~as.numeric(Drug),y = ~Claims, color = ~Drug, type = "box", 
             hoverinfo = 'name+y') %>%
   add_markers(x = ~jitter(as.numeric(Drug)), y = ~Claims, color = ~Drug,
-              marker = list(size = 6),
+              marker = list(size = ~size), alpha = .6,
               hoverinfo = "text",
               text = ~paste0("State: ", State,
-                             "<br>Claims Per 100 Persons: ", round(Claims, 2),
+                             "<br>Claims Per 100 Persons:  ", round(Claims, 2),
                              "<br>Opioid Deaths Per 100,000: ", Opioid_Death_Rate),
-              showlegend = FALSE) %>% 
-  layout(
-  showlegend = FALSE,
+               showlegend = FALSE) %>% 
+   layout(
+   showlegend = FALSE,
   xaxis = list(title = "", tickmode = 'array', nticks = 3, tickvals = c(1,2,3),
                ticktext = c('Hydrocodone', 'Oxycodone', 'Tramadol'), tickfont = list(size = 20)),
   yaxis = list(title = 'Claims Per 100 Persons', titlefont = list(size = 20), tickfont = list(size = 18)),
@@ -388,6 +484,22 @@ dat %>%
   )
 ```
 
+```{r, echo = FALSE}
+p1
+```
+
+<div id = 'list10'>
+# Trends
+* Only Medicare claims
+* Hydrocodone had the biggest variation; most popular in the South
+* Tennessee an outlier on all 3 blox plots
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
 prescribers_by_state_2016 <- opioid_prescribers_2016 %>% 
@@ -402,7 +514,7 @@ prescribers_by_state_2016 <- opioid_prescribers_2016 %>%
 
 cor(prescribers_by_state_2016 %>% select(Prescribers_Per_100000, Opioid_Death_Rate))
 
-p1 <- ggplot(prescribers_by_state_2016, aes(x = Prescribers_Per_100000, y = Opioid_Death_Rate)) + 
+ggplot(prescribers_by_state_2016, aes(x = Prescribers_Per_100000, y = Opioid_Death_Rate)) + 
   geom_point()
 
 g <- list(
@@ -423,8 +535,16 @@ p1 <- plot_geo(prescribers_by_state_2016, locationmode = 'USA-states') %>%
 p1
 ```
 
-
-
+<div id = 'list11'>
+* Maine has the most opioid prescribers per capita at 187 per 100,000 
+* Tennessee is number two at 173 per 100,000
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
 by_prescriber <- opioid_prescribers_2016 %>% 
@@ -447,7 +567,17 @@ p3 <-   ggplot(data=by_prescriber,(aes(x = percentile, y = cumulative_freq))) +
 ```{r, echo = FALSE, warning = FALSE}
 p3
 ```
-
+<div id= 'list12'>
+* Just includes pain prescribers
+* Close to pareto ratio:  26% of opioid prescribers are prescribing 80% of opioid 
+* If we were to look at all prescribers, we would see a stronger pareto ratio
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ```{r, include = FALSE}
 by_specialty <- opioid_prescribers_2016 %>% 
@@ -474,22 +604,42 @@ p2 <-   ggplot(data=by_specialty,(aes(x = Specialty, weight = relative_freq))) +
 ```{r, echo = FALSE}
 p2
 ```
+<div id = 'list13'>
+* Small number of specialties that prescribe 80% of opioids 
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+```{r results="asis", include=FALSE}
+cat("
+<style>
+h1 {
+   color: blue;
+}
+</style>
+")
+```
 
-Our model uses the following predictors:
-* Prescription Rate of each of 17 opioids, calculated from Medicare Data
+# Our Random Forest model uses the following predictors to predict overdose deaths: 
+<div id='list13'>
+* Prescription Rate of each of 17 opioids, calculated from Medicare Data  
 * Overall prescription rate for all opioids, obtained from the CDC
 * Various measures obtained from the Census Bureau:
-+ Labor Force Participation Rate
-+ Unemployment Rate
-+ Median Income
-+ Percentage of Population with Less Than a High School Education
-+ Percent of the Population Non-Hispanic White
-+ Percentage of the Population Living in a Rural Area
-+ Percentage of Males who are Unmarried
+    + Labor Force Participation Rate
+    + Unemployment Rate
+    + Median Income
+    + Percentage of Population with Less Than a High School Education
+    + Percent of the Population Non-Hispanic White
+    + Percentage of the Population Living in a Rural Area
+    + Percentage of Males who are Unmarried
 * Share of the vote in the 2016 election going to Donald Trump
 * Number of Suboxone Prescribers per 100,000 Residents, calculated from Medicare Data
-* Number of Facilities Providing Some Medication Assisted Treatment per 100,000 residents, obtained from The Foundation for AIDS Research.
+* Number of Facilities Providing Some Medication Assisted Treatment per 100,000 residents, obtained from The Foundation for AIDS Research
 * Region of the country, as defined by the Census Bureau.
+</div>
 
 ```{r, include = FALSE}
 prescribers_by_state_2015 <- opioid_prescribers_2015 %>% 
@@ -594,16 +744,25 @@ drugs_by_state <- drugs_by_state %>% inner_join(prescribers_by_state)
 drugs_by_state <- drugs_by_state %>% select(-totpop)
 ```
 
-```{r}
+```{r, include = FALSE}
 library(fastDummies)
 Regions <- read_csv('data/State/Regions.csv') %>% mutate(Division = str_replace_all(Division, ' ', '_'))
 drugs_by_state <- drugs_by_state %>% inner_join(Regions)
-drugs_by_state <-drugs_by_state %>% dummy_cols(select_columns = 'Division') %>% select(-Division)
-drugs_by_state <- drugs_by_state %>% select(-BUPRENORPHINE)
+drugs_by_state <-drugs_by_state %>% dummy_cols(select_columns = 'Division') %>% 
+  select(-Division)
+  drugs_by_state <- drugs_by_state %>% select(-BUPRENORPHINE)
 ```
+<div id = 'list14'>
+* 37 predictors
+* Data based on year 2013 - 2016, mostly using Census Data 
+* Blue curve represents our model's regression
+* The red line represents the predicted values if our model had a perfect prediction rate
+* This model would likely have produced stronger predictions if we had all of the predictor variable data available at a county level 
+</div>
+<br>
+<br>
 
-
-```{r, echo = FALSE}
+```{r, include = FALSE}
 set.seed(321)
 train_test <- sample(unique(drugs_by_state[['Abbrev']]), 10, replace = FALSE)
 train <- drugs_by_state %>% filter(!(Abbrev %in% train_test)) %>% select(-c(Abbrev, State, Year))
@@ -613,26 +772,126 @@ rf_fit <- train(Opioid_Death_Rate~.,data=train, method = 'ranger', importance = 
 test$predictions <- predict(rf_fit, test)
 
 mae <- mean(abs(test$Opioid_Death_Rate - test$predictions))
-print(mae)
+```
 
-ggplot(aes(Opioid_Death_Rate, predictions), data = test) +
+```{r, include = FALSE, message = FALSE}
+a <-ggplot(aes(Opioid_Death_Rate, predictions), data = test) +
   geom_point() +
   geom_smooth() +
-  geom_line(aes(Opioid_Death_Rate, Opioid_Death_Rate), color = 'red')
-
-varImp(rf_fit)
+  geom_line(aes(Opioid_Death_Rate, Opioid_Death_Rate), color = 'red') +
+  labs(x = "True Opioid Death Rate", y = "Predicted Opioid Death Rate", 
+       title = "Model Performance on Test Set", subtitle = "Random Forest Model") +
+  theme(plot.title = element_text(size=18), axis.text.x=element_text(size=16), axis.title = element_text(size = 16), axis.text.y=element_text(size = 16), plot.subtitle = element_text(size = 14)) +
+  annotate("text", x = 25, y = 2, label = paste("Mean Absolute Error: ", round(mae, 3)), size = 8)
 ```
 
 ```{r, echo = FALSE}
+a
+```
+
+
+```{r, include = FALSE}
+Importance<-as.vector(varImp(rf_fit)$importance)
+Variable<-(as.vector(rownames(varImp(rf_fit)$importance)))
+DF<-cbind(Variable,Importance)
+DF<-as.data.frame(DF)
+```
+
+
+```{r, echo = FALSE, warning = FALSE}
+ggplot(DF %>% top_n(10, Overall), aes(x=reorder(Variable,Overall), y=Overall,fill=Overall))+ 
+      geom_bar(stat="identity", position="dodge") + coord_flip()+
+      ylab("Variable Importance")+
+      xlab("")+
+      labs(subtitle = 'Random Forest Model') +
+      ggtitle("Information Value Summary")+
+      guides(fill=F) +
+      scale_fill_gradient(low="blue", high="blue") +
+      scale_x_discrete( labels = rev(c('Suboxone Prescribers \nPer 100,000 Residents', 'New England Division', 'Labor Force Participation Rate', 'Oxycodone Prescribing Rate', 'Share of Vote Won by Donald Trump', 'Percent White', 'Unemployment Rate', 'East North Central Division', 'South Atlantic Division', 'Percent Rural')))+
+  theme(plot.title = element_text(size = 18), axis.text.x = element_text(size = 16), axis.title = element_text(size = 16), axis.text.y=element_text(size = 16), plot.subtitle = element_text(size = 14))
+```
+
+<br>
+<div id = 'list15'>
+* Suboxone prescribers are most important predictor (obviously)
+* Other important and more interesting predictors were: 
+    + If state was in New England
+    + Labor force participation rate more than twice as important as unemployment rate
+    + Percent of state that voted for Trump in 2016 general election
+    + Percent of state that is white 
+* We predict these predictors would be more pronounced if we had all of this data on a county level
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<div id = 'list16'>
+# Stochastic Gradient Boosting model:
+* 159 samples 
+* Same 37 predictors 
+* Same years (2013 - 2016)
+* Similar performance as Random Forest
+</div>
+
+```{r, include = FALSE}
 gbm_fit <- train(Opioid_Death_Rate~.,data=train, method = 'gbm', verbose = FALSE)
 gbm_fit
 test$predictions <- predict(gbm_fit, test)
 mae <- mean(abs(test$Opioid_Death_Rate - test$predictions))
-print(mae)
-
-ggplot(aes(Opioid_Death_Rate, predictions), data = test) +
-  geom_point() +
-  geom_smooth() +
-  geom_line(aes(Opioid_Death_Rate, Opioid_Death_Rate), color = 'red')
 ```
 
+```{r, include = FALSE, message = FALSE}
+b <- ggplot(aes(Opioid_Death_Rate, predictions), data = test) +
+  geom_point() +
+  geom_smooth() +
+  geom_line(aes(Opioid_Death_Rate, Opioid_Death_Rate), color = 'red')+
+  labs(x = "True Opioid Death Rate", y = "Predicted Opioid Death Rate", 
+       title = "Model Performance on Test Set", subtitle = "Gradient Boosted Trees Model") +
+  theme(plot.title = element_text(size=18), axis.text.x=element_text(size=16), axis.title = element_text(size = 16), axis.text.y=element_text(size = 16), plot.subtitle = element_text(size = 14)) +
+    annotate("text", x = 25, y = 2, label = paste("Mean Absolute Error: ", round(mae, 3)), size = 8)
+```
+
+```{r, echo = FALSE}
+b
+```
+
+
+```{r, include = FALSE}
+DF <- summary(gbm_fit, plotit = FALSE)
+```
+
+```{r, echo = FALSE}
+ggplot(DF %>% top_n(10, rel.inf), aes(x=reorder(var,rel.inf), y=rel.inf,fill=rel.inf))+ 
+      geom_bar(stat="identity", position="dodge") + coord_flip()+
+      ylab("Variable Importance")+
+      xlab("")+
+      ggtitle("Information Value Summary")+
+      labs(subtitle = 'Gradient Boosted Trees Model') +
+      guides(fill=F) +
+      scale_fill_gradient(low="blue", high="blue") +
+      scale_x_discrete( labels = rev(c('Suboxone Prescribers\n Per 100,000 Residents', 'Percent White', 'Fentanyl Prescribing Rate', 'Oxycodone Prescribing Rate', 'Meperidine Prescribing Rate', 'Codeine Prescribing Rate', 'Pentazocine Prescribing Rate', 'Number of Treatment Facilities \nPer 100,000 Residents', 'Percent Rural', 'Methadone Prescribing Rate'))) +
+  theme(plot.title = element_text(size = 18), axis.text.x = element_text(size = 16), axis.title = element_text(size = 16), axis.text.y=element_text(size = 16), plot.subtitle = element_text(size = 14))
+
+```
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<div id = 'list17'>
+# Conclusions: 
+* The overdose death rate has not leveled off yet 
+* Per capita prescription decrease has not lessened overdose deaths
+* There is a pareto effect by both opioid prescribers and by specialty 
+* Using a model to make predictions for all states is difficult b/c of the diversity of states
+* Key trends: Opioid death rates are associated with areas that are:
+    + Rural 
+    + White
+    + Working class
+    + Pro-Trump in '16 election 
+    + Dropping labor market participation rates 
+    + Prescribing Oxycodone
+</div>
