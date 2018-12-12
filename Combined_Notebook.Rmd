@@ -465,7 +465,7 @@ dat <- dat %>% mutate(size = 30/38*Opioid_Death_Rate + 160/38)
 p1 <- dat %>%
   plot_ly() %>% 
   add_trace(x = ~as.numeric(Drug),y = ~Claims, color = ~Drug, type = "box", 
-            hoverinfo = 'name+y') %>%
+            hoverinfo = 'name+y', boxpoints = FALSE) %>%
   add_markers(x = ~jitter(as.numeric(Drug)), y = ~Claims, color = ~Drug,
               marker = list(size = ~size), alpha = .6,
               hoverinfo = "text",
@@ -538,6 +538,7 @@ p1
 <div id = 'list11'>
 * Maine has the most opioid prescribers per capita at 187 per 100,000 
 * Tennessee is number two at 173 per 100,000
+* There is a 0.264 correlation between number of opioid prescribers per capita and number of opioid overdose deaths per capita.
 </div>
 <br>
 <br>
@@ -892,6 +893,6 @@ ggplot(DF %>% top_n(10, rel.inf), aes(x=reorder(var,rel.inf), y=rel.inf,fill=rel
     + White
     + Working class
     + Pro-Trump in '16 election 
-    + Dropping labor market participation rates 
+    + Experiencing dropping labor market participation rates 
     + Prescribing Oxycodone
 </div>
